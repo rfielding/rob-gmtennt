@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fake-service
+  annotations:
+    greymatter.io/inject-sidecar-to: "9090"
+    greymatter.io/configure-sidecar: "true"
+spec:
+  selector:
+    matchLabels:
+      app: fake-service
+  template:
+    metadata:
+      labels:
+        app: fake-service
+    spec:
+      containers:
+        - name: fake-service
+          image: greymatter.jfrog.io/internal-oci/fake-service:v0.24.2

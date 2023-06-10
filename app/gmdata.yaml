@@ -1,0 +1,113 @@
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gmdata-pv-claim
+spec:
+  storageClassName: default
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 32Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gmdata
+  labels:
+    app: guestbook
+spec:
+  selector:
+    matchLabels:
+      app: guestbook
+      tier: gmdata
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: guestbook
+        tier: gmdata
+    spec:
+      imagePullSecrets:
+      - name: greymatter-image-pull
+      containers:
+      - name: gmdata
+        securityContext:
+          allowPrivilegeEscalation: false # hack to be able to have USES3=false and write to disk
+          runAsUser: 0
+        image: greymatter.jfrog.io/internal-oci/gm-data:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8181
+        env:
+        - name: DEFAULT_USER_DN
+          value: "CN=quickstart,OU=Engineering,O=Decipher Technology Studios,L=Alexandria,ST=Virginia,C=US"
+        - name: CLIENT_JWT_ENDPOINT_ADDRESS
+          value: "jwt"
+        - name: CLIENT_JWT_ENDPOINT_PORT
+          value: "8080"
+        - name: CLIENT_JWT_ENDPOINT_PREFIX
+          value: ""
+        - name: JWT_API_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: JWT_API_KEY
+        - name: JWT_PUB
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: JWT_PUB
+        - name: CLIENT_PREFIX
+          value: ""
+        - name: CLIENT_USE_TLS
+          value: "false"
+        - name: CLIENT_HOST
+          value: "localhost"
+        - name: CLIENT_PORT
+          value: "8181"
+        - name: GMDATA_NAMESPACE
+          value: "world"
+        - name: GMDATA_NAMESPACE_USERFIELD
+          value: "email"
+        - name: MASTERKEY
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MASTERKEY
+        - name: FILE_BUCKET
+          value: "decipherers"
+        - name: FILE_PARTITION
+          value: "gmdata"
+        - name: USES3
+          value: "false"
+        - name: MONGOHOST
+          value: "mongo-master"
+        - name: MONGODB
+          value: "chili"
+            #        - name: KAFKA_PEERS
+            #          value: "kafkadata:2181"
+            #        volumeMounts:
+            #        - name: buckets
+            #          mountPath: /buckets
+            #      volumes:
+            #      - name: buckets
+            #        persistentVolumeClaim:
+            #          claimName: gmdata-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gmdata
+  labels:
+    app: guestbook
+    tier: gmdata
+spec:
+  type: NodePort 
+  ports:
+  - port: 8181
+  selector:
+    app: guestbook
+    tier: gmdata
+

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+
+kubectl apply -n rob-gmtenant  -f cfg/pv.yaml
+kubectl apply -n rob-gmtenant -f cfg/cm.yaml
+kubectl apply -n rob-gmtenant -f app/fake.yaml           # persistent
+kubectl apply -n rob-gmtenant -f app/zk.yaml           # persistent
+kubectl apply -n rob-gmtenant -f app/kafkadata.yaml    # persistent
+kubectl apply -n rob-gmtenant -f app/jwt.yaml
+kubectl apply -n rob-gmtenant -f app/mongo.yaml        # persistent
+kubectl apply -n rob-gmtenant -f app/gmdata.yaml       # persistent when not using S3
+##kubectl apply -n rob-gmtenant -f app/redis.yaml
+kubectl apply -n rob-gmtenant -f k8s

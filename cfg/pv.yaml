@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mongo-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: default
+  capacity:
+    storage: 16Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/disks/vol1"
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: gmdata-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: default
+  capacity:
+    storage: 32Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/disks/vol1"

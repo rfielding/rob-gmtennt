@@ -1,0 +1,70 @@
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-pv-claim
+spec:
+  storageClassName: default
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 16Gi
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: mongo
+  labels:
+    app: mongo
+spec:
+  serviceName: mongo-master
+  selector:
+    matchLabels:
+      app: mongo
+      role: master
+      tier: backend
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mongo
+        role: master
+        tier: backend
+    spec:
+      containers:
+      - name: mongo
+        securityContext:
+          allowPrivilegeEscalation: false # hack to be able to have USES3=false and write to disk
+          runAsUser: 0
+        image: mongo
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongodata
+          mountPath: /data
+      volumes:
+      - name: mongodata
+        persistentVolumeClaim:
+          claimName: mongo-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-master
+  labels:
+    app: mongo
+    role: master
+    tier: backend
+spec:
+  ports:
+  - port: 27017
+    targetPort: 27017
+  selector:
+    app: mongo
+    role: master
+    tier: backend

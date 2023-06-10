@@ -1,0 +1,73 @@
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: jwt
+  labels:
+    app: jwt
+  annotations:
+    greymatter.io/inject-sidecar-to: "8080"
+    greymatter.io/configure_sidecar: "true"
+spec:
+  selector:
+    matchLabels:
+      app: jwt
+      role: master
+      tier: backend
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: jwt
+        role: master
+        tier: backend
+    spec:
+      imagePullSecrets:
+      - name: regcreds
+      containers:
+      - name: jwt
+        image: greymatter.jfrog.io/internal-oci/gm-jwt-security:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        env:
+        - name: ENABLE_TLS
+          value: "false"
+        - name: JWT_API_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: JWT_API_KEY
+        - name: JWT_PUB
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: JWT_PUB
+        - name: PRIVATE_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: JWT_PRIVATE_KEY
+        - name: REDIS_HOST
+        - name: TOKEN_EXP_TIME
+          value: "30000"
+        - name: USERS_JSON
+          value: ewogICJ1c2VycyI6IFsKICAgIHsKICAgICAgImxhYmVsIjogIkNOPXF1aWNrc3RhcnQsT1U9RW5naW5lZXJpbmcsTz1EZWNpcGhlciBUZWNobm9sb2d5IFN0dWRpb3MsTD1BbGV4YW5kcmlhLFNUPVZpcmdpbmlhLEM9VVMiLAogICAgICAidmFsdWVzIjogewogICAgICAgICJ1c2VyRE4iOiBbCiAgICAgICAgICAiQ049cXVpY2tzdGFydCxPVT1FbmdpbmVlcmluZyxPPURlY2lwaGVyIFRlY2hub2xvZ3kgU3R1ZGlvcyxMPUFsZXhhbmRyaWEsU1Q9VmlyZ2luaWEsQz1VUyIKICAgICAgICBdLAogICAgICAgICJlbWFpbCI6IFsKICAgICAgICAgICJxdWlja3N0YXJ0QGRlY2lwaGVybm93LmNvbSIsCiAgICAgICAgICAibG9jYWx1c2VyQGRlY2lwaGVybm93LmNvbSIKICAgICAgICBdLAogICAgICAgICJvcmciOiBbCiAgICAgICAgICAid3d3LmRlY2lwaGVybm93LmNvbSIsICJpZWVlIgogICAgICAgIF0sCiAgICAgICAgInByaXZpbGVnZSI6IFsKICAgICAgICAgICJyb290IiwgInJlYWRvbmx5IgogICAgICAgIF0sCiAgICAgICAgInByb2plY3RzIjogWwogICAgICAgICAgImdtZGF0YXgiLCAiand0LXNlcnZlciIKICAgICAgICBdLAogICAgICAgICJjaXRpemVuc2hpcCI6IFsKICAgICAgICAgICJVUyIKICAgICAgICBdLAoJInByaXZzIjogWwogICAgICAgICAgImlfYW1fYV9yb2JvdCIKCV0sCiAgICAgICAgImFnZSI6IFsKICAgICAgICAgICJhZHVsdCIKICAgICAgICBdCiAgICAgIH0KICAgIH0KICBdCn0K
+        - name: ZEROLOG_LEVEL
+          value: debug
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jwt
+  labels:
+    app: jwt
+    role: master
+    tier: backend
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    app: jwt
+    role: master
+    tier: backend
